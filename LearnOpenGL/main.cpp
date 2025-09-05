@@ -16,7 +16,7 @@
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
-void processInput(GLFWwindow *window);
+void processInput(GLFWwindow* window);
 
 // settings
 const unsigned int SCR_WIDTH = 800;
@@ -57,7 +57,7 @@ int main(int argc, char* argv[])
 
 	glfwSetInputMode(window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 	glfwSetCursorPosCallback(window, mouse_callback);
-	glfwSetScrollCallback(window, scroll_callback); 
+	glfwSetScrollCallback(window, scroll_callback);
 
 	if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
 	{
@@ -154,6 +154,33 @@ int main(int argc, char* argv[])
 	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
 	glEnableVertexAttribArray(1);
 
+
+	auto lightVertexShaderPath = dir + "/Resource/Shader/shader_light.vert";
+	auto lightFragmentShaderPath = dir + "/Resource/Shader/shader_light.frag";
+	Shader lightShader(lightVertexShaderPath.c_str(), lightFragmentShaderPath.c_str());
+	unsigned int lightVAO;
+	glGenVertexArrays(1, &lightVAO);
+	glBindVertexArray(lightVAO);
+	// we only need to bind to the VBO, the container's VBO's data already contains the data.
+	glBindBuffer(GL_ARRAY_BUFFER, VBO);
+	// set the vertex attribute 
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+	glEnableVertexAttribArray(0);
+	// don't forget to use the corresponding shader program first (to set the uniform)
+	lightShader.use();
+	lightShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
+	lightShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+	ourShader.use();
+	ourShader.setVec3("lightColor", 1.0f, 1.0f, 1.0f);
+	ourShader.setVec3("objectColor", 1.0f, 0.5f, 0.31f);
+
+	glm::vec3 lightPos(1.2f, 1.0f, 2.0f);
+	glm::mat4 model = glm::mat4(1.0f);
+
+	glm::mat4 lightModel = glm::translate(model, lightPos);
+	lightModel = glm::scale(lightModel, glm::vec3(0.2f));
+
+
 	unsigned int texture1, texture2;
 	glGenTextures(1, &texture1);
 	glBindTexture(GL_TEXTURE_2D, texture1);
@@ -228,33 +255,34 @@ int main(int argc, char* argv[])
 
 		ourShader.use();
 
-        // pass projection matrix to shader (note that in this case it could change every frame)
-        glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
-        ourShader.setMat4("projection", projection);
+		// pass projection matrix to shader (note that in this case it could change every frame)
+		glm::mat4 projection = glm::perspective(glm::radians(camera.Zoom), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+		ourShader.setMat4("projection", projection);
 
-        // camera/view transformation
-        glm::mat4 view = camera.GetViewMatrix();
-        ourShader.setMat4("view", view);
+		// camera/view transformation
+		glm::mat4 view = camera.GetViewMatrix();
+		ourShader.setMat4("view", view);
 
 		// render boxes
 		glBindVertexArray(VAO);
-		for (unsigned int i = 0; i < 10; i++)
-		{
-			// calculate the model matrix for each object and pass it to shader before drawing
-			glm::mat4 model = glm::mat4(1.0f);
-			model = glm::translate(model, cubePositions[i]);
-			float angle = 20.0f * i;
-			model = glm::rotate(model, glm::radians(angle), glm::vec3(1.0f, 0.3f, 0.5f));
-			ourShader.setMat4("model", model);
+		ourShader.setMat4("model", model);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
 
-			glDrawArrays(GL_TRIANGLES, 0, 36);
-		}
+
+		lightShader.use();
+		lightShader.setMat4("projection", projection);
+		lightShader.setMat4("view", view);
+		lightShader.setMat4("model", lightModel);
+		glBindVertexArray(lightVAO);
+		glDrawArrays(GL_TRIANGLES, 0, 36);
+
 
 		glfwSwapBuffers(window);
 		glfwPollEvents();
 	}
 
 	glDeleteVertexArrays(1, &VAO);
+	glDeleteVertexArrays(1, &lightVAO);
 	glDeleteBuffers(1, &VBO);
 
 	glfwTerminate();
@@ -267,40 +295,40 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 }
 void processInput(GLFWwindow* window)
 {
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
+	if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, true);
 
-    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
-        camera.ProcessKeyboard(FORWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
-        camera.ProcessKeyboard(BACKWARD, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
-        camera.ProcessKeyboard(LEFT, deltaTime);
-    if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
-        camera.ProcessKeyboard(RIGHT, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS)
+		camera.ProcessKeyboard(FORWARD, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS)
+		camera.ProcessKeyboard(BACKWARD, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS)
+		camera.ProcessKeyboard(LEFT, deltaTime);
+	if (glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS)
+		camera.ProcessKeyboard(RIGHT, deltaTime);
 }
 void mouse_callback(GLFWwindow* window, double xposIn, double yposIn)
 {
-    float xpos = static_cast<float>(xposIn);
-    float ypos = static_cast<float>(yposIn);
+	float xpos = static_cast<float>(xposIn);
+	float ypos = static_cast<float>(yposIn);
 
-    if (firstMouse)
-    {
-        lastX = xpos;
-        lastY = ypos;
-        firstMouse = false;
-    }
+	if (firstMouse)
+	{
+		lastX = xpos;
+		lastY = ypos;
+		firstMouse = false;
+	}
 
-    float xoffset = xpos - lastX;
-    float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
+	float xoffset = xpos - lastX;
+	float yoffset = lastY - ypos; // reversed since y-coordinates go from bottom to top
 
-    lastX = xpos;
-    lastY = ypos;
+	lastX = xpos;
+	lastY = ypos;
 
-    camera.ProcessMouseMovement(xoffset, yoffset);
+	camera.ProcessMouseMovement(xoffset, yoffset);
 }
 
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset)
 {
-camera.ProcessMouseScroll(static_cast<float>(yoffset));
+	camera.ProcessMouseScroll(static_cast<float>(yoffset));
 }
