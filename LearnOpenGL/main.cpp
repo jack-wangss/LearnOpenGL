@@ -13,6 +13,10 @@
 #include "Shader.h"
 #include "Camera.h"
 
+#include <assimp/Importer.hpp>
+#include <assimp/scene.h>
+#include <assimp/postprocess.h>
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void mouse_callback(GLFWwindow* window, double xpos, double ypos);
 void scroll_callback(GLFWwindow* window, double xoffset, double yoffset);
@@ -39,7 +43,8 @@ int main(int argc, char* argv[])
 	std::string dir = argv[0];
 	dir = dir.substr(0, dir.find_last_of("/\\"));
 
-
+	Assimp::Importer importer;
+	const aiScene *scene = importer.ReadFile(dir, aiProcess_Triangulate | aiProcess_FlipUVs);
 
 	glfwInit();
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);

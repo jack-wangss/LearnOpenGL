@@ -71,8 +71,8 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(SolutionDir)Library;$(ProjectDir)Vendor\glad\include;$(ProjectDir)Vendor;$(IncludePath)</IncludePath>
-    <LibraryPath>$(SolutionDir)Library;$(LibraryPath)</LibraryPath>
+    <IncludePath>$(SolutionDir)Library;$(ProjectDir)Vendor\glad\include;$(ProjectDir)Vendor;$(SolutionDir)Library\Assimp;$(IncludePath)</IncludePath>
+    <LibraryPath>$(SolutionDir)Library;$(SolutionDir)Library\Assimp;$(LibraryPath)</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <IncludePath>$(SolutionDir)Library;$(ProjectDir)Vendor\glad\include;$(ProjectDir)Vendor;$(IncludePath)</IncludePath>
@@ -117,10 +117,11 @@
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalDependencies>glfw3.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>glfw3.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
     <PostBuildEvent>
-      <Command>xcopy /E /I /Y "$(ProjectDir)Resource" "$(TargetDir)Resource"</Command>
+      <Command>xcopy /E /I /Y "$(ProjectDir)Resource" "$(TargetDir)Resource"
+copy "$(SolutionDir)Library\Assimp\assimp-vc143-mt.dll" "$(TargetDir)assimp-vc143-mt.dll"</Command>
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
